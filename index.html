@@ -183,7 +183,11 @@
             <input type="number" id="LcNum" min="10" max="500" step="10" value="50" style="width:64px" onchange="syncFromNumber('Lc','LcNum',null,0,10,500)">
           </div>
         </label>
-        <label><span>Bend radius R (μm)</span>
+        <label style="flex-direction:row;align-items:center;gap:8px;">
+          <input type="checkbox" id="bendEnabled" checked onchange="toggleBend()" style="width:16px;height:16px;accent-color:#5c6bc0;">
+          <span>Include bending loss</span>
+        </label>
+        <label id="bendRow"><span>Bend radius R (μm)</span>
           <div style="display:flex;gap:7px;align-items:center;">
             <input type="range" id="Rbend" min="1" max="1000" step="1" value="100" style="flex:1" oninput="syncFromSlider('Rbend','RbendNum',null,0)">
             <input type="number" id="RbendNum" min="1" max="1000" step="1" value="100" style="width:64px" onchange="syncFromNumber('Rbend','RbendNum',null,0,1,1000)">
@@ -285,6 +289,13 @@ const typeDescs = {
   wire: 'Very small cross-section photonic wire. High index contrast, maximum sidewall scattering loss.',
   fiber: 'Multimode step-index fiber geometry. Intermodal coupling contributes to effective loss.'
 };
+
+function toggleBend() {
+  const enabled = document.getElementById('bendEnabled').checked;
+  document.getElementById('bendRow').style.opacity = enabled ? '1' : '0.4';
+  document.getElementById('Rbend').disabled = !enabled;
+  document.getElementById('RbendNum').disabled = !enabled;
+}
 
 function onTypeChange() {
   const t = document.getElementById('wgType').value;
@@ -536,16 +547,15 @@ def calc_loss(mode_field, x, y, dx, dy, n_map, mask_arr, lam_um, neff,
     else:
         alpha_scat_dBcm = 0.0
 
-    # 3. Bending loss (simplified analytical estimate)
-    # Confinement factor
-    gamma = np.sum(I[mask]) * dx * dy / P_total
-    # Effective NA
-    NA = np.sqrt(max(0, float(np.max(n2))**2 - float(neff)**2))
-    # Simple exponential model: alpha_bend = C * exp(-R / R_crit)
-    # R_crit ~ lam / (2 * pi * NA^2) * neff
-    R_crit_um = lam_um * neff / (2 * np.pi * max(NA**2, 1e-6))
-    A_bend = 10.0 * (1.0 - gamma)  # higher loss for poorly confined modes
-    alpha_bend_dBcm = A_bend * np.exp(-R_bend_um / max(R_crit_um, 0.1)) * (R_crit_um / R_bend_um + 0.01)
+    # 3. Bending loss (simplified analytical estimate; skipped when R_bend_um == 0)
+    if R_bend_um <= 0:
+        alpha_bend_dBcm = 0.0
+    else:
+        gamma = np.sum(I[mask]) * dx * dy / P_total
+        NA = np.sqrt(max(0, float(np.max(n2))**2 - float(neff)**2))
+        R_crit_um = lam_um * neff / (2 * np.pi * max(NA**2, 1e-6))
+        A_bend = 10.0 * (1.0 - gamma)
+        alpha_bend_dBcm = A_bend * np.exp(-R_bend_um / max(R_crit_um, 0.1)) * (R_crit_um / R_bend_um + 0.01)
 
     # For multimode fiber: add intermodal coupling contribution (rough estimate)
     if wg_type == 'fiber':
@@ -601,7 +611,8 @@ async function runSim() {
   const nimL= parseFloat(document.getElementById('nimClad').value);
   const sig = parseFloat(document.getElementById('sigma').value);
   const Lc  = parseFloat(document.getElementById('Lc').value);
-  const Rb  = parseFloat(document.getElementById('Rbend').value);
+  const bendOn = document.getElementById('bendEnabled').checked;
+  const Rb  = bendOn ? parseFloat(document.getElementById('Rbend').value) : 0;
 
   if (nc <= ncl) {
     setStatus('Error: n_core must be greater than n_clad.', 'error');
@@ -729,7 +740,7 @@ function showLoss(loss, sweep) {
   const rows = [
     {name:'Material absorption', val:loss.mat, cls:'loss-mat', note:`n_im_core=${document.getElementById('nimCore').value}`},
     {name:'Sidewall scattering', val:loss.scat, cls:'loss-scat', note:`σ=${document.getElementById('sigma').value} nm, Lc=${document.getElementById('Lc').value} nm`},
-    {name:'Bending loss', val:loss.bend, cls:'loss-bend', note:`R=${document.getElementById('Rbend').value} µm`},
+    {name:'Bending loss', val:loss.bend, cls:'loss-bend', note: document.getElementById('bendEnabled').checked ? `R=${document.getElementById('Rbend').value} µm` : 'Disabled'},
     {name:'TOTAL', val:loss.total, cls:'loss-total', note:'Sum of all mechanisms'},
   ];
   const tbody = document.getElementById('lossTableBody');
