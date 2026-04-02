@@ -3,96 +3,144 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Waveguide Mode Simulator</title>
+  <title>Waveguide Loss Calculator</title>
   <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:'Segoe UI',Arial,sans-serif;background:#0f1117;color:#e0e0e0;min-height:100vh;}
-    header{background:linear-gradient(135deg,#1a237e,#283593);padding:24px 32px;border-bottom:2px solid #3949ab;}
-    header h1{font-size:1.7rem;font-weight:700;color:#fff;letter-spacing:1px;}
-    header p{color:#90caf9;font-size:0.9rem;margin-top:4px;}
-    .main{display:flex;gap:0;min-height:calc(100vh - 80px);}
-    .sidebar{width:300px;min-width:260px;background:#161b27;padding:24px 18px;border-right:1px solid #2a2f45;display:flex;flex-direction:column;gap:18px;}
-    .panel-title{font-size:0.75rem;font-weight:700;color:#7986cb;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;}
-    .param-group{background:#1e2435;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;}
-    label{font-size:0.82rem;color:#b0bec5;display:flex;flex-direction:column;gap:4px;}
+    header{background:linear-gradient(135deg,#1a237e,#283593);padding:20px 32px;border-bottom:2px solid #3949ab;}
+    header h1{font-size:1.6rem;font-weight:700;color:#fff;letter-spacing:1px;}
+    header p{color:#90caf9;font-size:0.85rem;margin-top:4px;}
+    .main{display:flex;gap:0;min-height:calc(100vh - 72px);}
+    .sidebar{width:310px;min-width:280px;background:#161b27;padding:20px 16px;border-right:1px solid #2a2f45;display:flex;flex-direction:column;gap:14px;overflow-y:auto;}
+    .panel-title{font-size:0.72rem;font-weight:700;color:#7986cb;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;}
+    .param-group{background:#1e2435;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:9px;}
+    label{font-size:0.8rem;color:#b0bec5;display:flex;flex-direction:column;gap:3px;}
     label span{color:#cfd8dc;font-weight:500;}
     input[type=range]{width:100%;accent-color:#5c6bc0;}
-    input[type=number]{background:#252d40;border:1px solid #3a4060;border-radius:4px;color:#e0e0e0;padding:5px 8px;width:100%;font-size:0.85rem;}
-    select{background:#252d40;border:1px solid #3a4060;border-radius:4px;color:#e0e0e0;padding:6px 8px;width:100%;font-size:0.85rem;}
-    .val{color:#80cbc4;font-weight:700;font-size:0.9rem;}
-    button{background:linear-gradient(135deg,#3949ab,#5c6bc0);color:#fff;border:none;padding:12px;border-radius:8px;cursor:pointer;font-size:0.95rem;font-weight:600;letter-spacing:0.5px;transition:opacity 0.2s;}
-    button:hover{opacity:0.85;}
-    button:disabled{opacity:0.4;cursor:not-allowed;}
-    .content{flex:1;padding:24px;display:flex;flex-direction:column;gap:16px;overflow:auto;}
-    .status{background:#1e2435;border-radius:8px;padding:12px 16px;font-size:0.85rem;color:#90caf9;border-left:3px solid #5c6bc0;}
+    input[type=number]{background:#252d40;border:1px solid #3a4060;border-radius:4px;color:#e0e0e0;padding:5px 8px;width:100%;font-size:0.82rem;}
+    select{background:#252d40;border:1px solid #3a4060;border-radius:4px;color:#e0e0e0;padding:5px 8px;width:100%;font-size:0.82rem;}
+    .val{color:#80cbc4;font-weight:700;}
+    button{background:linear-gradient(135deg,#3949ab,#5c6bc0);color:#fff;border:none;padding:11px;border-radius:8px;cursor:pointer;font-size:0.92rem;font-weight:600;letter-spacing:0.5px;transition:opacity 0.2s;}
+    button:hover{opacity:0.85;}button:disabled{opacity:0.4;cursor:not-allowed;}
+    .content{flex:1;padding:20px;display:flex;flex-direction:column;gap:14px;overflow:auto;}
+    .status{background:#1e2435;border-radius:8px;padding:11px 15px;font-size:0.83rem;color:#90caf9;border-left:3px solid #5c6bc0;}
     .status.error{color:#ef9a9a;border-color:#e53935;}
     .status.ok{color:#a5d6a7;border-color:#43a047;}
-    .results-bar{display:flex;gap:12px;flex-wrap:wrap;}
-    .result-card{background:#1e2435;border-radius:8px;padding:12px 18px;min-width:160px;}
-    .result-card .rc-label{font-size:0.72rem;color:#7986cb;text-transform:uppercase;letter-spacing:1px;}
-    .result-card .rc-val{font-size:1.2rem;font-weight:700;color:#80cbc4;margin-top:4px;}
-    .plots-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;}
+    .results-bar{display:flex;gap:10px;flex-wrap:wrap;}
+    .result-card{background:#1e2435;border-radius:8px;padding:10px 16px;min-width:140px;}
+    .result-card .rc-label{font-size:0.7rem;color:#7986cb;text-transform:uppercase;letter-spacing:1px;}
+    .result-card .rc-val{font-size:1.1rem;font-weight:700;color:#80cbc4;margin-top:3px;}
+    .plots-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;}
     .plot-box{background:#1e2435;border-radius:10px;padding:12px;}
-    .plot-box h3{font-size:0.82rem;color:#7986cb;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
-    .plot-area{width:100%;height:300px;}
-    .mode-tabs{display:flex;gap:8px;flex-wrap:wrap;}
-    .mode-tab{background:#252d40;border:1px solid #3a4060;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.82rem;color:#b0bec5;transition:all 0.15s;}
+    .plot-box h3{font-size:0.78rem;color:#7986cb;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;}
+    .plot-area{width:100%;height:290px;}
+    .mode-tabs{display:flex;gap:7px;flex-wrap:wrap;}
+    .mode-tab{background:#252d40;border:1px solid #3a4060;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:0.8rem;color:#b0bec5;transition:all 0.15s;}
     .mode-tab.active{background:#3949ab;border-color:#5c6bc0;color:#fff;}
-    #schematic{width:100%;height:200px;}
-    footer{text-align:center;padding:12px;font-size:0.75rem;color:#546e7a;border-top:1px solid #2a2f45;}
+    #schematic{width:100%;height:180px;}
+    .loss-table{width:100%;border-collapse:collapse;font-size:0.83rem;}
+    .loss-table th{background:#252d40;color:#7986cb;padding:8px 12px;text-align:left;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;}
+    .loss-table td{padding:7px 12px;border-bottom:1px solid #2a2f45;color:#cfd8dc;}
+    .loss-table tr:last-child td{border-bottom:none;}
+    .loss-table tr:hover td{background:#252d40;}
+    .loss-mat{color:#64b5f6;}
+    .loss-scat{color:#ffb74d;}
+    .loss-bend{color:#ef5350;}
+    .loss-total{color:#80cbc4;font-weight:700;}
+    .section-title{font-size:0.95rem;font-weight:700;color:#90caf9;padding:6px 0 2px;border-bottom:1px solid #2a2f45;margin-bottom:6px;}
+    footer{text-align:center;padding:10px;font-size:0.73rem;color:#546e7a;border-top:1px solid #2a2f45;}
+    .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:600;margin-left:6px;}
+    .badge-type{background:#1a237e;color:#90caf9;}
   </style>
 </head>
 <body>
 <header>
-  <h1>Waveguide Mode Field Simulator</h1>
-  <p>Finite Difference Method · Rectangular / Square Dielectric Waveguide · Runs in browser</p>
+  <h1>Waveguide Propagation Loss Calculator</h1>
+  <p>FDM Mode Solver · Material Absorption · Sidewall Scattering · Bending Loss · Runs in browser via Pyodide</p>
 </header>
 <div class="main">
-  <!-- Sidebar -->
   <div class="sidebar">
+
+    <!-- Waveguide Type -->
+    <div>
+      <div class="panel-title">Waveguide Type</div>
+      <div class="param-group">
+        <label><span>Type</span>
+          <select id="wgType" onchange="onTypeChange()">
+            <option value="rect">Step-index Rectangular</option>
+            <option value="ridge">Ridge Waveguide</option>
+            <option value="slot">Slot Waveguide</option>
+            <option value="wire">Photonic Wire</option>
+            <option value="fiber">Multimode Fiber</option>
+          </select>
+        </label>
+        <div id="typeDesc" style="font-size:0.75rem;color:#7986cb;padding:4px 0;line-height:1.5;">
+          Uniform core surrounded by infinite cladding. Baseline reference geometry.
+        </div>
+      </div>
+    </div>
+
+    <!-- Geometry -->
     <div>
       <div class="panel-title">Waveguide Geometry</div>
       <div class="param-group">
-        <label><span>Width  a (μm)</span>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="range" id="a" min="0" max="50" step="0.5" value="1.0" style="flex:1" oninput="syncFromSlider('a','aNum','aVal',1)">
-            <input type="number" id="aNum" min="0" max="50" step="0.5" value="1.0" style="width:64px" onchange="syncFromNumber('a','aNum','aVal',1,0,50)">
+        <label><span>Width a (μm)</span>
+          <div style="display:flex;gap:7px;align-items:center;">
+            <input type="range" id="a" min="0" max="50" step="0.5" value="1.0" style="flex:1" oninput="syncFromSlider('a','aNum',null,1)">
+            <input type="number" id="aNum" min="0" max="50" step="0.5" value="1.0" style="width:64px" onchange="syncFromNumber('a','aNum',null,1,0,50)" onblur="fmtDec(this,1)">
           </div>
         </label>
-        <label><span>Height  b (μm)</span>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="range" id="b" min="0" max="50" step="0.5" value="1.0" style="flex:1" oninput="syncFromSlider('b','bNum','bVal',1)">
-            <input type="number" id="bNum" min="0" max="50" step="0.5" value="1.0" style="width:64px" onchange="syncFromNumber('b','bNum','bVal',1,0,50)">
+        <label><span>Height b (μm)</span>
+          <div style="display:flex;gap:7px;align-items:center;">
+            <input type="range" id="b" min="0" max="50" step="0.5" value="1.0" style="flex:1" oninput="syncFromSlider('b','bNum',null,1)">
+            <input type="number" id="bNum" min="0" max="50" step="0.5" value="1.0" style="width:64px" onchange="syncFromNumber('b','bNum',null,1,0,50)" onblur="fmtDec(this,1)">
+          </div>
+        </label>
+        <!-- Slot width (only for slot waveguide) -->
+        <label id="slotRow" style="display:none;"><span>Slot width s (μm)</span>
+          <div style="display:flex;gap:7px;align-items:center;">
+            <input type="range" id="slot" min="0.05" max="2.0" step="0.05" value="0.2" style="flex:1" oninput="syncFromSlider('slot','slotNum',null,2)">
+            <input type="number" id="slotNum" min="0.05" max="2.0" step="0.05" value="0.20" style="width:64px" onchange="syncFromNumber('slot','slotNum',null,2,0.05,2.0)" onblur="fmtDec(this,2)">
           </div>
         </label>
       </div>
     </div>
+
+    <!-- Refractive Indices -->
     <div>
       <div class="panel-title">Refractive Indices</div>
       <div class="param-group">
-        <label><span>Core  n<sub>core</sub></span>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="range" id="ncore" min="1.4" max="3.5" step="0.001" value="1.500" style="flex:1" oninput="syncFromSlider('ncore','ncoreNum','ncoreVal',3)">
-            <input type="number" id="ncoreNum" min="1.4" max="3.5" step="0.001" value="1.500" style="width:72px" onchange="syncFromNumber('ncore','ncoreNum','ncoreVal',3,1.4,3.5)" onblur="fmtDec(this,3)">
+        <label><span>Core n_core (real)</span>
+          <div style="display:flex;gap:7px;align-items:center;">
+            <input type="range" id="ncore" min="1.4" max="3.5" step="0.001" value="1.500" style="flex:1" oninput="syncFromSlider('ncore','ncoreNum',null,3)">
+            <input type="number" id="ncoreNum" min="1.4" max="3.5" step="0.001" value="1.500" style="width:72px" onchange="syncFromNumber('ncore','ncoreNum',null,3,1.4,3.5)" onblur="fmtDec(this,3)">
           </div>
         </label>
-        <label><span>Cladding  n<sub>clad</sub></span>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="range" id="nclad" min="1.0" max="3.5" step="0.001" value="1.000" style="flex:1" oninput="syncFromSlider('nclad','ncladNum','ncladVal',3)">
-            <input type="number" id="ncladNum" min="1.0" max="3.5" step="0.001" value="1.000" style="width:72px" onchange="syncFromNumber('nclad','ncladNum','ncladVal',3,1.0,3.5)" onblur="fmtDec(this,3)">
+        <label><span>Cladding n_clad (real)</span>
+          <div style="display:flex;gap:7px;align-items:center;">
+            <input type="range" id="nclad" min="1.0" max="3.5" step="0.001" value="1.000" style="flex:1" oninput="syncFromSlider('nclad','ncladNum',null,3)">
+            <input type="number" id="ncladNum" min="1.0" max="3.5" step="0.001" value="1.000" style="width:72px" onchange="syncFromNumber('nclad','ncladNum',null,3,1.0,3.5)" onblur="fmtDec(this,3)">
           </div>
+        </label>
+        <label><span>Core n_im (absorption, e.g. 1e-4)</span>
+          <input type="number" id="nimCore" value="0.0001" step="0.00001" min="0" max="0.1" style="font-size:0.82rem;" onchange="drawSchematic()">
+        </label>
+        <label><span>Cladding n_im (absorption, e.g. 1e-6)</span>
+          <input type="number" id="nimClad" value="0.000001" step="0.0000001" min="0" max="0.01" style="font-size:0.82rem;" onchange="drawSchematic()">
         </label>
       </div>
     </div>
+
+    <!-- Illumination -->
     <div>
       <div class="panel-title">Illumination</div>
       <div class="param-group">
-        <label><span>Wavelength  λ (μm)</span>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="range" id="lam" min="0.4" max="2.0" step="0.01" value="1.55" style="flex:1" oninput="syncFromSlider('lam','lamNum','lamVal',2)">
-            <input type="number" id="lamNum" min="0.4" max="2.0" step="0.01" value="1.55" style="width:64px" onchange="syncFromNumber('lam','lamNum','lamVal',2,0.4,2.0)">
+        <label><span>Wavelength λ (μm)</span>
+          <div style="display:flex;gap:7px;align-items:center;">
+            <input type="range" id="lam" min="0.4" max="2.0" step="0.01" value="1.55" style="flex:1" oninput="syncFromSlider('lam','lamNum',null,2)">
+            <input type="number" id="lamNum" min="0.4" max="2.0" step="0.01" value="1.55" style="width:64px" onchange="syncFromNumber('lam','lamNum',null,2,0.4,2.0)" onblur="fmtDec(this,2)">
           </div>
         </label>
         <label><span>Grid resolution</span>
@@ -105,79 +153,165 @@
         </label>
       </div>
     </div>
+
+    <!-- Loss Parameters -->
     <div>
-      <div class="panel-title">Display</div>
+      <div class="panel-title">Loss Parameters</div>
       <div class="param-group">
-        <label><span>Field component</span>
+        <label id="roughRow"><span>Roughness σ (nm)</span>
+          <div style="display:flex;gap:7px;align-items:center;">
+            <input type="range" id="sigma" min="0" max="50" step="0.5" value="5" style="flex:1" oninput="syncFromSlider('sigma','sigmaNum',null,1)">
+            <input type="number" id="sigmaNum" min="0" max="50" step="0.5" value="5.0" style="width:64px" onchange="syncFromNumber('sigma','sigmaNum',null,1,0,50)" onblur="fmtDec(this,1)">
+          </div>
+        </label>
+        <label id="corrRow"><span>Correlation length Lc (nm)</span>
+          <div style="display:flex;gap:7px;align-items:center;">
+            <input type="range" id="Lc" min="10" max="500" step="10" value="50" style="flex:1" oninput="syncFromSlider('Lc','LcNum',null,0)">
+            <input type="number" id="LcNum" min="10" max="500" step="10" value="50" style="width:64px" onchange="syncFromNumber('Lc','LcNum',null,0,10,500)">
+          </div>
+        </label>
+        <label><span>Bend radius R (μm)</span>
+          <div style="display:flex;gap:7px;align-items:center;">
+            <input type="range" id="Rbend" min="1" max="1000" step="1" value="100" style="flex:1" oninput="syncFromSlider('Rbend','RbendNum',null,0)">
+            <input type="number" id="RbendNum" min="1" max="1000" step="1" value="100" style="width:64px" onchange="syncFromNumber('Rbend','RbendNum',null,0,1,1000)">
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Display -->
+    <div>
+      <div class="panel-title">Field Display</div>
+      <div class="param-group">
+        <label><span>Component</span>
           <select id="comp">
             <option value="Ex" selected>Ex (TE-like)</option>
             <option value="Ey">Ey (TM-like)</option>
-            <option value="Hz">Hz</option>
             <option value="I">Intensity |E|²</option>
           </select>
         </label>
       </div>
     </div>
-    <button id="runBtn" onclick="runSim()" disabled>⏳ Loading Python...</button>
+
+    <button id="runBtn" onclick="runSim()">▶  Run Simulation</button>
+    <div id="pyStatus" style="font-size:0.75rem;color:#546e7a;text-align:center;">Loading Pyodide...</div>
   </div>
 
-  <!-- Content -->
+  <!-- Main content -->
   <div class="content">
-    <div class="status" id="status">Initialising Pyodide (Python runtime)... please wait ~10s</div>
-
-    <!-- Schematic -->
-    <div class="plot-box">
+    <div id="schematicBox" class="plot-box">
       <h3>Waveguide Cross-Section</h3>
       <div id="schematic"></div>
     </div>
 
+    <div id="status" class="status">Initialising Python runtime (Pyodide). Please wait...</div>
+
     <!-- Results bar -->
-    <div class="results-bar" id="resultsBar" style="display:none">
-      <div class="result-card"><div class="rc-label">Effective Index</div><div class="rc-val" id="neff">—</div></div>
-      <div class="result-card"><div class="rc-label">Guided Modes</div><div class="rc-val" id="nmodes">—</div></div>
+    <div id="resultsBar" class="results-bar" style="display:none;">
+      <div class="result-card"><div class="rc-label">Guided modes</div><div class="rc-val" id="nmodes">—</div></div>
       <div class="result-card"><div class="rc-label">V-number</div><div class="rc-val" id="vnum">—</div></div>
+      <div class="result-card"><div class="rc-label">n_eff (Mode 1)</div><div class="rc-val" id="neff">—</div></div>
       <div class="result-card"><div class="rc-label">Mode</div><div class="rc-val" id="modeLabel">—</div></div>
     </div>
 
-    <!-- Mode selector -->
-    <div class="mode-tabs" id="modeTabs" style="display:none"></div>
+    <!-- Loss results section -->
+    <div id="lossSection" style="display:none;">
+      <div class="section-title">📉 Propagation Loss Results</div>
+      <div class="results-bar" style="margin-bottom:10px;">
+        <div class="result-card"><div class="rc-label">Total Loss</div><div class="rc-val loss-total" id="lossTotalCard">—</div></div>
+        <div class="result-card"><div class="rc-label">Material Absorption</div><div class="rc-val loss-mat" id="lossMatCard">—</div></div>
+        <div class="result-card"><div class="rc-label">Sidewall Scattering</div><div class="rc-val loss-scat" id="lossScatCard">—</div></div>
+        <div class="result-card"><div class="rc-label">Bending Loss</div><div class="rc-val loss-bend" id="lossBendCard">—</div></div>
+      </div>
+      <div class="plots-grid">
+        <div class="plot-box">
+          <h3>Loss Breakdown (dB/cm)</h3>
+          <div id="lossBarPlot" class="plot-area"></div>
+        </div>
+        <div class="plot-box">
+          <h3>Loss vs Wavelength (dB/cm)</h3>
+          <div id="lossWlPlot" class="plot-area"></div>
+        </div>
+      </div>
+      <div class="plot-box" style="margin-top:4px;">
+        <h3>Loss Summary Table</h3>
+        <table class="loss-table" id="lossTable">
+          <thead><tr><th>Mechanism</th><th>Value (dB/cm)</th><th>% Contribution</th><th>Notes</th></tr></thead>
+          <tbody id="lossTableBody"></tbody>
+        </table>
+      </div>
+    </div>
 
-    <!-- Plots -->
-    <div class="plots-grid">
-      <div class="plot-box"><h3 id="fieldTitle">Mode Field</h3><div class="plot-area" id="fieldPlot"></div></div>
-      <div class="plot-box"><h3>Intensity |E|²</h3><div class="plot-area" id="intensPlot"></div></div>
-      <div class="plot-box"><h3>Effective Index vs Mode</h3><div class="plot-area" id="neffPlot"></div></div>
-      <div class="plot-box"><h3>Field Profile (x-cut, centre)</h3><div class="plot-area" id="profilePlot"></div></div>
+    <!-- Mode field plots -->
+    <div id="modeTabs" class="mode-tabs" style="display:none;"></div>
+    <div id="fieldSection" style="display:none;">
+      <div class="section-title" id="fieldTitle">Mode Field</div>
+      <div class="plots-grid">
+        <div class="plot-box"><h3>Field Component</h3><div id="fieldPlot" class="plot-area"></div></div>
+        <div class="plot-box"><h3>Intensity |E|²</h3><div id="intensPlot" class="plot-area"></div></div>
+        <div class="plot-box"><h3>Horizontal Profile (y = centre)</h3><div id="profilePlot" class="plot-area"></div></div>
+        <div class="plot-box"><h3>n_eff vs Mode Number</h3><div id="neffPlot" class="plot-area"></div></div>
+      </div>
     </div>
   </div>
 </div>
-<footer>Waveguide Mode Simulator · FDM Eigenvalue Solver · grantrmit-dev · <a href="https://github.com/grantrmit-dev/waveguide-mode" style="color:#7986cb">GitHub</a></footer>
+<footer>Waveguide Propagation Loss Calculator · FDM solver via Pyodide · grantrmit-dev/waveguide-loss</footer>
 
 <script>
-// ── Parameter display update ───────────────────────────────────────────────
-function upd(id, valId, dec) {
-  document.getElementById(valId).textContent = parseFloat(document.getElementById(id).value).toFixed(dec);
+// ── State ─────────────────────────────────────────────────────────────────
+let pyodide = null;
+let allModes = [];
+let currentMode = 0;
+let lastSimData = null;
+
+// ── Type descriptions ─────────────────────────────────────────────────────
+const typeDescs = {
+  rect: 'Uniform core surrounded by infinite cladding. Baseline reference geometry.',
+  ridge: 'Partially etched waveguide. Significant sidewall roughness scattering loss from etched sidewalls.',
+  slot: 'Sub-wavelength slot between two high-index rails. Strong field confinement in low-index slot region.',
+  wire: 'Very small cross-section photonic wire. High index contrast, maximum sidewall scattering loss.',
+  fiber: 'Multimode step-index fiber geometry. Intermodal coupling contributes to effective loss.'
+};
+
+function onTypeChange() {
+  const t = document.getElementById('wgType').value;
+  document.getElementById('typeDesc').textContent = typeDescs[t];
+  document.getElementById('slotRow').style.display = t === 'slot' ? '' : 'none';
+  // Adjust roughness visibility
+  const hasRoughness = ['ridge','slot','wire'].includes(t);
+  document.getElementById('roughRow').style.opacity = hasRoughness ? '1' : '0.4';
+  document.getElementById('corrRow').style.opacity = hasRoughness ? '1' : '0.4';
   drawSchematic();
 }
 
-// Format a number input to fixed decimal places on blur
+// ── Pyodide init ──────────────────────────────────────────────────────────
+async function initPyodide() {
+  try {
+    pyodide = await loadPyodide();
+    await pyodide.loadPackage(['numpy', 'scipy']);
+    document.getElementById('pyStatus').textContent = '✅ Python ready';
+    setStatus('Ready. Configure parameters and click Run Simulation.', '');
+  } catch(e) {
+    document.getElementById('pyStatus').textContent = '❌ Pyodide failed';
+    setStatus('Failed to load Pyodide: ' + e.message, 'error');
+  }
+}
+
+// ── Helper functions ──────────────────────────────────────────────────────
 function fmtDec(el, dec) {
   const v = parseFloat(el.value);
   if (!isNaN(v)) el.value = v.toFixed(dec);
 }
 
-// Slider → number input + display label
 function syncFromSlider(sliderId, numId, valId, dec) {
   const v = parseFloat(document.getElementById(sliderId).value);
   const numEl = document.getElementById(numId);
-  // Only reformat while not focused (avoid disrupting typing)
   if (document.activeElement !== numEl) numEl.value = v.toFixed(dec);
   const lbl = valId && document.getElementById(valId);
   if (lbl) lbl.textContent = v.toFixed(dec);
   drawSchematic();
 }
 
-// Number input → slider + display label (with clamping)
 function syncFromNumber(sliderId, numId, valId, dec, minVal, maxVal) {
   let v = parseFloat(document.getElementById(numId).value);
   if (isNaN(v)) return;
@@ -189,181 +323,299 @@ function syncFromNumber(sliderId, numId, valId, dec, minVal, maxVal) {
   drawSchematic();
 }
 
-// ── Schematic ──────────────────────────────────────────────────────────────
+// ── Schematic ─────────────────────────────────────────────────────────────
 function drawSchematic() {
   const a = parseFloat(document.getElementById('a').value);
   const b = parseFloat(document.getElementById('b').value);
+  const t = document.getElementById('wgType').value;
+  const slot = parseFloat(document.getElementById('slot').value);
   const pad = 2.0;
   const W = a + 2*pad, H = b + 2*pad;
 
-  Plotly.react('schematic', [
-    {type:'rect', x0:0, y0:0, x1:W, y1:H, fillcolor:'#1a237e', line:{color:'#3949ab'}, mode:'lines', showlegend:false,
-     x:[0,W,W,0,0], y:[0,0,H,H,0], fill:'toself', fillcolor:'#1a237e', line:{color:'#3949ab'}, name:'Cladding'},
-    {type:'scatter', x:[pad, pad+a, pad+a, pad, pad], y:[pad, pad, pad+b, pad+b, pad],
-     fill:'toself', fillcolor:'#5c6bc0', line:{color:'#80cbc4',width:2}, name:'Core', mode:'lines'}
-  ], {
+  let traces = [
+    {x:[0,W,W,0,0], y:[0,0,H,H,0], fill:'toself', fillcolor:'#1a237e',
+     line:{color:'#3949ab'}, name:'Cladding', mode:'lines', showlegend:true}
+  ];
+
+  if (t === 'slot') {
+    // Two rails with a slot in middle
+    const hw = (a - slot) / 2;
+    traces.push(
+      {x:[pad, pad+hw, pad+hw, pad, pad], y:[pad, pad, pad+b, pad+b, pad],
+       fill:'toself', fillcolor:'#5c6bc0', line:{color:'#80cbc4',width:2}, name:'Rail 1', mode:'lines'},
+      {x:[pad+hw+slot, pad+a, pad+a, pad+hw+slot, pad+hw+slot], y:[pad, pad, pad+b, pad+b, pad],
+       fill:'toself', fillcolor:'#5c6bc0', line:{color:'#80cbc4',width:2}, name:'Rail 2', mode:'lines'},
+      {x:[pad+hw, pad+hw+slot, pad+hw+slot, pad+hw, pad+hw], y:[pad, pad, pad+b, pad+b, pad],
+       fill:'toself', fillcolor:'rgba(100,181,246,0.25)', line:{color:'#64b5f6',width:1,dash:'dot'}, name:'Slot', mode:'lines'}
+    );
+  } else if (t === 'ridge') {
+    // Ridge: partial etch — show slab below
+    const ridgeH = b * 0.6, slabH = b * 0.4;
+    traces.push(
+      {x:[0, W, W, 0, 0], y:[pad, pad, pad+slabH, pad+slabH, pad],
+       fill:'toself', fillcolor:'#283593', line:{color:'#3f51b5',width:1}, name:'Slab', mode:'lines'},
+      {x:[pad, pad+a, pad+a, pad, pad], y:[pad+slabH, pad+slabH, pad+slabH+ridgeH, pad+slabH+ridgeH, pad+slabH],
+       fill:'toself', fillcolor:'#5c6bc0', line:{color:'#80cbc4',width:2}, name:'Ridge', mode:'lines'}
+    );
+  } else {
+    traces.push(
+      {x:[pad, pad+a, pad+a, pad, pad], y:[pad, pad, pad+b, pad+b, pad],
+       fill:'toself', fillcolor:'#5c6bc0', line:{color:'#80cbc4',width:2}, name:'Core', mode:'lines'}
+    );
+  }
+
+  Plotly.react('schematic', traces, {
     paper_bgcolor:'transparent', plot_bgcolor:'transparent',
     margin:{l:40,r:20,t:10,b:40},
     xaxis:{title:'x (μm)', color:'#90a4ae', gridcolor:'#2a2f45', range:[0,W]},
     yaxis:{title:'y (μm)', color:'#90a4ae', gridcolor:'#2a2f45', range:[0,H], scaleanchor:'x'},
-    legend:{font:{color:'#b0bec5'},bgcolor:'transparent'},
-    font:{color:'#b0bec5'},
-    showlegend:true,
-    annotations:[{
-      x: pad+a/2, y: pad+b/2,
-      text: `n<sub>core</sub>=${document.getElementById('ncore').value}`,
-      showarrow:false, font:{color:'#fff',size:13}
-    },{
-      x: 0.3, y: 0.3,
-      text: `n<sub>clad</sub>=${document.getElementById('nclad').value}`,
-      showarrow:false, font:{color:'#90caf9',size:11}
-    }]
-  }, {responsive:true, displayModeBar:false});
+    legend:{font:{color:'#b0bec5'}, bgcolor:'transparent', orientation:'h', y:-0.25},
+    font:{color:'#b0bec5'}, responsive:true
+  });
 }
 
-// ── Pyodide init ───────────────────────────────────────────────────────────
-let pyodide = null;
-let allModes = [];
-let currentMode = 0;
-
-async function initPyodide() {
-  pyodide = await loadPyodide();
-  await pyodide.loadPackage(['numpy', 'scipy']);
-  document.getElementById('status').className = 'status ok';
-  document.getElementById('status').textContent = 'Ready. Set parameters and click Run Simulation.';
-  document.getElementById('runBtn').disabled = false;
-  document.getElementById('runBtn').textContent = '▶  Run Simulation';
-  drawSchematic();
-}
-
-// ── FDM solver (runs in Pyodide) ──────────────────────────────────────────
+// ── Solver Python code ────────────────────────────────────────────────────
 const SOLVER_CODE = `
 import numpy as np
-from scipy.sparse import diags, eye, kron
+from scipy.sparse import diags
 from scipy.sparse.linalg import eigsh
 
-def solve_modes(a_um, b_um, n_core, n_clad, lam_um, N, n_modes=6):
-    """FDM eigenvalue solver for rectangular dielectric waveguide."""
+def solve_modes(a_um, b_um, n_core, n_clad, lam_um, N, n_modes=6, wg_type='rect', slot_um=0.2):
     k0 = 2 * np.pi / lam_um
-
-    # Guard against zero dimensions
     a_um = max(a_um, 0.05)
     b_um = max(b_um, 0.05)
-
-    # Use large padding (5× waveguide dimension) to approximate infinite cladding.
-    # Guided modes decay evanescently into the cladding; 5× ensures the field
-    # is negligible at the Dirichlet boundary, so it behaves as infinite cladding.
     pad = max(a_um, b_um) * 5.0
     Lx = a_um + 2 * pad
     Ly = b_um + 2 * pad
-
     dx = Lx / N
     dy = Ly / N
-
     x = np.linspace(dx/2, Lx - dx/2, N)
     y = np.linspace(dy/2, Ly - dy/2, N)
     X, Y = np.meshgrid(x, y, indexing='ij')
 
-    # Refractive index distribution
-    n = np.where(
-        (np.abs(X - Lx/2) <= a_um/2) & (np.abs(Y - Ly/2) <= b_um/2),
-        n_core, n_clad
-    )
+    # Build refractive index map
+    cx, cy = Lx/2, Ly/2
+    if wg_type == 'slot':
+        hw = (a_um - slot_um) / 2
+        mask = (
+            ((np.abs(X - cx) >= slot_um/2) & (np.abs(X - cx) <= a_um/2)) &
+            (np.abs(Y - cy) <= b_um/2)
+        )
+    elif wg_type == 'ridge':
+        slab_h = b_um * 0.4
+        ridge_h = b_um * 0.6
+        slab_mask = (np.abs(Y - (cy - ridge_h/2)) <= slab_h/2 + 1e-9)
+        ridge_mask = (np.abs(X - cx) <= a_um/2) & (np.abs(Y - (cy + slab_h/2)) <= ridge_h/2 + 1e-9)
+        mask = slab_mask | ridge_mask
+    else:
+        mask = (np.abs(X - cx) <= a_um/2) & (np.abs(Y - cy) <= b_um/2)
 
-    # 1D second-derivative matrices (Dirichlet BC)
-    d2x = (diags([1, -2, 1], [-1, 0, 1], shape=(N, N)) / dx**2).toarray()
-    d2y = (diags([1, -2, 1], [-1, 0, 1], shape=(N, N)) / dy**2).toarray()
+    n = np.where(mask, n_core, n_clad)
 
-    Ix = np.eye(N)
-    Iy = np.eye(N)
-
-    # 2D Laplacian via Kronecker product
-    L = np.kron(d2x, Iy) + np.kron(Ix, d2y)
-
-    # k0^2 * n^2 diagonal
+    d2x = (diags([1,-2,1],[-1,0,1],shape=(N,N))/dx**2).toarray()
+    d2y = (diags([1,-2,1],[-1,0,1],shape=(N,N))/dy**2).toarray()
+    L = np.kron(d2x, np.eye(N)) + np.kron(np.eye(N), d2y)
     K = np.diag((k0 * n.ravel())**2)
-
-    # Helmholtz operator: (L + K) E = beta^2 E
     A = L + K
 
-    # Solve for largest eigenvalues (guided modes have beta^2 near k0^2*n_core^2)
     beta2_max = (k0 * n_core)**2
     beta2_min = (k0 * n_clad)**2
 
     try:
-        vals, vecs = eigsh(A, k=n_modes, sigma=beta2_max * 0.999, which='LM', tol=1e-6, maxiter=5000)
+        vals, vecs = eigsh(A, k=n_modes, sigma=beta2_max*0.999, which='LM', tol=1e-6, maxiter=5000)
     except Exception:
         vals, vecs = np.linalg.eigh(A)
         idx = np.argsort(vals)[::-1]
         vals, vecs = vals[idx[:n_modes]], vecs[:, idx[:n_modes]]
 
-    # Filter guided modes: beta2_min < beta2 < beta2_max
     guided = []
     for i, v in enumerate(vals):
         if beta2_min < v < beta2_max:
             neff = np.sqrt(v) / k0
             field = vecs[:, i].reshape(N, N)
-            # Normalise
             field /= np.max(np.abs(field))
             guided.append({'neff': float(neff), 'field': field.tolist()})
 
-    # Sort by neff descending
     guided.sort(key=lambda m: m['neff'], reverse=True)
-
-    # V-number
-    V = (np.pi / lam_um) * np.sqrt(a_um**2 + b_um**2) * np.sqrt(n_core**2 - n_clad**2)
+    V = (np.pi / lam_um) * np.sqrt(a_um**2 + b_um**2) * np.sqrt(max(0, n_core**2 - n_clad**2))
 
     return {
-        'modes': guided,
-        'x': x.tolist(),
-        'y': y.tolist(),
-        'n_map': n.tolist(),
-        'V': float(V),
-        'n_guided': len(guided)
+        'modes': guided, 'x': x.tolist(), 'y': y.tolist(),
+        'n_map': n.tolist(), 'V': float(V), 'n_guided': len(guided),
+        'dx': float(dx), 'dy': float(dy), 'mask': mask.tolist()
     }
+
+def calc_loss(mode_field, x, y, dx, dy, n_map, mask_arr, lam_um, neff,
+              nim_core, nim_clad, sigma_nm, Lc_nm, R_bend_um, wg_type):
+    """Calculate propagation loss contributions in dB/cm."""
+    import numpy as np
+    k0 = 2 * np.pi / lam_um
+    beta = neff * k0
+    N = len(x)
+    field = np.array(mode_field)
+    mask = np.array(mask_arr, dtype=bool)
+    n2 = np.array(n_map)
+
+    # Intensity |E|^2
+    I = field**2
+
+    # Total power
+    P_total = np.sum(I) * dx * dy
+
+    # 1. Material absorption loss
+    nim_map = np.where(mask, nim_core, nim_clad)
+    alpha_mat_pm = 2 * k0 * np.sum(nim_map * I) * dx * dy / P_total  # per micron
+    alpha_mat_pcm = alpha_mat_pm * 1e4  # per cm
+    alpha_mat_dBcm = alpha_mat_pcm * 10 / np.log(10) * 2  # neper/cm -> dB/cm
+
+    # 2. Sidewall roughness scattering (Payne-Lacey model)
+    # Only for types with etched sidewalls
+    sigma_um = sigma_nm * 1e-3
+    Lc_um = Lc_nm * 1e-3
+    if wg_type in ('ridge', 'slot', 'wire', 'rect'):
+        # Field at left and right sidewalls (x-direction)
+        # Find core edge columns
+        mid_row = N // 2
+        core_cols = np.where(mask[mid_row, :])[0]
+        if len(core_cols) >= 2:
+            left_col = core_cols[0]
+            right_col = core_cols[-1]
+            # Field gradient at sidewall using finite difference
+            dEdx_left = (field[left_col+1, :] - field[left_col-1, :]) / (2*dx) if left_col > 0 else field[left_col, :] / dx
+            dEdx_right = (field[right_col+1, :] - field[right_col-1, :]) / (2*dx) if right_col < N-1 else field[right_col, :] / dx
+            # Integrate |dE/dx|^2 along wall
+            wall_integral = (np.sum(dEdx_left**2) + np.sum(dEdx_right**2)) * dy
+            # Payne-Lacey: alpha = (k0^2 / beta) * sigma^2 * Lc / (1 + (beta*Lc)^2) * wall_integral / P
+            denom = 1.0 + (beta * Lc_um)**2
+            alpha_scat_pm = (k0**2 / beta) * (sigma_um**2) * Lc_um / denom * wall_integral / P_total
+            alpha_scat_pcm = alpha_scat_pm * 1e4
+            alpha_scat_dBcm = alpha_scat_pcm * 10 / np.log(10) * 2
+        else:
+            alpha_scat_dBcm = 0.0
+    else:
+        alpha_scat_dBcm = 0.0
+
+    # 3. Bending loss (simplified analytical estimate)
+    # Confinement factor
+    gamma = np.sum(I[mask]) * dx * dy / P_total
+    # Effective NA
+    NA = np.sqrt(max(0, float(np.max(n2))**2 - float(neff)**2))
+    # Simple exponential model: alpha_bend = C * exp(-R / R_crit)
+    # R_crit ~ lam / (2 * pi * NA^2) * neff
+    R_crit_um = lam_um * neff / (2 * np.pi * max(NA**2, 1e-6))
+    A_bend = 10.0 * (1.0 - gamma)  # higher loss for poorly confined modes
+    alpha_bend_dBcm = A_bend * np.exp(-R_bend_um / max(R_crit_um, 0.1)) * (R_crit_um / R_bend_um + 0.01)
+
+    # For multimode fiber: add intermodal coupling contribution (rough estimate)
+    if wg_type == 'fiber':
+        alpha_scat_dBcm += 0.02  # typical intermodal coupling ~0.02 dB/cm for MMF
+
+    total_dBcm = alpha_mat_dBcm + alpha_scat_dBcm + alpha_bend_dBcm
+
+    return {
+        'mat': float(alpha_mat_dBcm),
+        'scat': float(alpha_scat_dBcm),
+        'bend': float(alpha_bend_dBcm),
+        'total': float(total_dBcm)
+    }
+
+def sweep_loss_vs_wavelength(a_um, b_um, n_core, n_clad, lam_list,
+                              nim_core, nim_clad, sigma_nm, Lc_nm, R_bend_um,
+                              wg_type, N=60):
+    import json
+    results = []
+    for lam in lam_list:
+        try:
+            r = solve_modes(a_um, b_um, n_core, n_clad, lam, N, n_modes=4, wg_type=wg_type)
+            if r['modes']:
+                m = r['modes'][0]
+                loss = calc_loss(m['field'], r['x'], r['y'], r['dx'], r['dy'],
+                                 r['n_map'], r['mask'], lam, m['neff'],
+                                 nim_core, nim_clad, sigma_nm, Lc_nm, R_bend_um, wg_type)
+                results.append({'lam': lam, **loss})
+            else:
+                results.append({'lam': lam, 'mat':0,'scat':0,'bend':0,'total':0})
+        except:
+            results.append({'lam': lam, 'mat':0,'scat':0,'bend':0,'total':0})
+    return results
 `;
 
 // ── Run simulation ─────────────────────────────────────────────────────────
 async function runSim() {
+  if (!pyodide) { setStatus('Pyodide not ready yet.', 'error'); return; }
   const btn = document.getElementById('runBtn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Computing...';
+  btn.disabled = true; btn.textContent = '⏳ Computing...';
   setStatus('Running FDM eigenvalue solver...', '');
 
-  const a    = parseFloat(document.getElementById('a').value);
-  const b    = parseFloat(document.getElementById('b').value);
-  const nc   = parseFloat(document.getElementById('ncore').value);
-  const ncl  = parseFloat(document.getElementById('nclad').value);
-  const lam  = parseFloat(document.getElementById('lam').value);
-  const N    = parseInt(document.getElementById('res').value);
+  const a   = parseFloat(document.getElementById('a').value);
+  const b   = parseFloat(document.getElementById('b').value);
+  const nc  = parseFloat(document.getElementById('ncore').value);
+  const ncl = parseFloat(document.getElementById('nclad').value);
+  const lam = parseFloat(document.getElementById('lam').value);
+  const N   = parseInt(document.getElementById('res').value);
+  const wgt = document.getElementById('wgType').value;
+  const slot= parseFloat(document.getElementById('slot').value);
+  const nimC= parseFloat(document.getElementById('nimCore').value);
+  const nimL= parseFloat(document.getElementById('nimClad').value);
+  const sig = parseFloat(document.getElementById('sigma').value);
+  const Lc  = parseFloat(document.getElementById('Lc').value);
+  const Rb  = parseFloat(document.getElementById('Rbend').value);
 
   if (nc <= ncl) {
     setStatus('Error: n_core must be greater than n_clad.', 'error');
-    btn.disabled = false; btn.textContent = '▶  Run Simulation';
-    return;
+    btn.disabled = false; btn.textContent = '▶  Run Simulation'; return;
   }
 
   try {
     await pyodide.runPythonAsync(SOLVER_CODE);
+
+    // Run mode solver
     const result = await pyodide.runPythonAsync(`
 import json
-r = solve_modes(${a}, ${b}, ${nc}, ${ncl}, ${lam}, ${N}, n_modes=8)
+r = solve_modes(${a}, ${b}, ${nc}, ${ncl}, ${lam}, ${N}, n_modes=8, wg_type='${wgt}', slot_um=${slot})
 json.dumps(r)
 `);
     const data = JSON.parse(result);
     allModes = data.modes;
-    // Attach physical coordinate arrays to each mode for use in renderMode
     allModes.forEach(m => { m._x = data.x; m._y = data.y; });
     currentMode = 0;
+    lastSimData = {data, a, b, nc, ncl, lam, wgt, slot, nimC, nimL, sig, Lc, Rb};
 
     if (allModes.length === 0) {
-      setStatus('No guided modes found. Try increasing waveguide size, n_core, or decreasing wavelength.', 'error');
-      btn.disabled = false; btn.textContent = '▶  Run Simulation';
-      return;
+      setStatus('No guided modes found.', 'error');
+      btn.disabled = false; btn.textContent = '▶  Run Simulation'; return;
     }
+
+    // Calculate loss for first mode
+    const lossResult = await pyodide.runPythonAsync(`
+import json
+loss = calc_loss(
+    ${JSON.stringify(allModes[0].field)},
+    ${JSON.stringify(data.x)}, ${JSON.stringify(data.y)},
+    ${data.dx}, ${data.dy},
+    ${JSON.stringify(data.n_map)}, ${JSON.stringify(data.mask)},
+    ${lam}, ${allModes[0].neff},
+    ${nimC}, ${nimL}, ${sig}, ${Lc}, ${Rb}, '${wgt}'
+)
+json.dumps(loss)
+`);
+    const loss = JSON.parse(lossResult);
+
+    // Wavelength sweep
+    setStatus('Running wavelength sweep...', '');
+    const lamList = Array.from({length:17}, (_,i) => +(0.4 + i*0.1).toFixed(2));
+    const sweepResult = await pyodide.runPythonAsync(`
+import json
+sw = sweep_loss_vs_wavelength(${a},${b},${nc},${ncl},
+    ${JSON.stringify(lamList)},
+    ${nimC},${nimL},${sig},${Lc},${Rb},'${wgt}',N=60)
+json.dumps(sw)
+`);
+    const sweep = JSON.parse(sweepResult);
 
     setStatus(`Found ${allModes.length} guided mode(s). V = ${data.V.toFixed(3)}`, 'ok');
     showResults(data);
+    showLoss(loss, sweep);
     renderMode(0, data);
     buildModeTabs(data);
 
@@ -371,9 +623,7 @@ json.dumps(r)
     setStatus('Solver error: ' + e.message, 'error');
     console.error(e);
   }
-
-  btn.disabled = false;
-  btn.textContent = '▶  Run Simulation';
+  btn.disabled = false; btn.textContent = '▶  Run Simulation';
 }
 
 function setStatus(msg, cls) {
@@ -384,21 +634,62 @@ function setStatus(msg, cls) {
 
 function showResults(data) {
   document.getElementById('resultsBar').style.display = 'flex';
+  document.getElementById('fieldSection').style.display = '';
   document.getElementById('nmodes').textContent = data.n_guided;
   document.getElementById('vnum').textContent = data.V.toFixed(3);
   if (allModes.length > 0) {
     document.getElementById('neff').textContent = allModes[0].neff.toFixed(6);
     document.getElementById('modeLabel').textContent = 'Mode 1';
   }
-
-  // neff vs mode plot
   const modeNums = allModes.map((m,i) => i+1);
   const neffs = allModes.map(m => m.neff);
-  Plotly.react('neffPlot', [{
-    x: modeNums, y: neffs, type:'scatter', mode:'lines+markers',
-    marker:{color:'#5c6bc0', size:10}, line:{color:'#5c6bc0'},
-    name:'n_eff'
-  }], plotLayout('Mode number', 'Effective index n_eff'));
+  Plotly.react('neffPlot', [{x:modeNums, y:neffs, type:'scatter', mode:'lines+markers',
+    marker:{color:'#5c6bc0',size:10}, line:{color:'#5c6bc0'}, name:'n_eff'}],
+    plotLayout('Mode number','Effective index n_eff'));
+}
+
+function showLoss(loss, sweep) {
+  document.getElementById('lossSection').style.display = '';
+  const fmt = v => v < 0.001 ? v.toExponential(3) : v.toFixed(4);
+  document.getElementById('lossTotalCard').textContent = fmt(loss.total) + ' dB/cm';
+  document.getElementById('lossMatCard').textContent = fmt(loss.mat) + ' dB/cm';
+  document.getElementById('lossScatCard').textContent = fmt(loss.scat) + ' dB/cm';
+  document.getElementById('lossBendCard').textContent = fmt(loss.bend) + ' dB/cm';
+
+  // Bar chart
+  const total = loss.total || 1;
+  Plotly.react('lossBarPlot', [{
+    x: ['Material\nAbsorption','Sidewall\nScattering','Bending\nLoss'],
+    y: [loss.mat, loss.scat, loss.bend],
+    type: 'bar',
+    marker: {color: ['#64b5f6','#ffb74d','#ef5350']},
+    text: [fmt(loss.mat), fmt(loss.scat), fmt(loss.bend)],
+    textposition: 'outside'
+  }], {...plotLayout('Loss mechanism','dB/cm'), showlegend:false});
+
+  // Wavelength sweep plot
+  const lams = sweep.map(s=>s.lam);
+  Plotly.react('lossWlPlot', [
+    {x:lams, y:sweep.map(s=>s.mat), name:'Material', mode:'lines', line:{color:'#64b5f6',width:2}},
+    {x:lams, y:sweep.map(s=>s.scat), name:'Scattering', mode:'lines', line:{color:'#ffb74d',width:2}},
+    {x:lams, y:sweep.map(s=>s.bend), name:'Bending', mode:'lines', line:{color:'#ef5350',width:2}},
+    {x:lams, y:sweep.map(s=>s.total), name:'Total', mode:'lines', line:{color:'#80cbc4',width:3,dash:'dot'}}
+  ], {...plotLayout('Wavelength (μm)','Loss (dB/cm)'), legend:{font:{color:'#b0bec5'},bgcolor:'transparent'}});
+
+  // Table
+  const rows = [
+    {name:'Material absorption', val:loss.mat, cls:'loss-mat', note:`n_im_core=${document.getElementById('nimCore').value}`},
+    {name:'Sidewall scattering', val:loss.scat, cls:'loss-scat', note:`σ=${document.getElementById('sigma').value} nm, Lc=${document.getElementById('Lc').value} nm`},
+    {name:'Bending loss', val:loss.bend, cls:'loss-bend', note:`R=${document.getElementById('Rbend').value} µm`},
+    {name:'TOTAL', val:loss.total, cls:'loss-total', note:'Sum of all mechanisms'},
+  ];
+  const tbody = document.getElementById('lossTableBody');
+  tbody.innerHTML = rows.map(r => `<tr>
+    <td class="${r.cls}">${r.name}</td>
+    <td class="${r.cls}">${fmt(r.val)}</td>
+    <td>${r.val > 0 ? (r.val/total*100).toFixed(1) : '—'}%</td>
+    <td style="color:#7986cb;font-size:0.78rem;">${r.note}</td>
+  </tr>`).join('');
 }
 
 function buildModeTabs(data) {
@@ -419,156 +710,95 @@ function buildModeTabs(data) {
   });
 }
 
+function calcFWHM(arr, coords) {
+  const intArr = arr.map(v=>v*v);
+  const peak = Math.max(...intArr);
+  const half = peak/2;
+  let left=null, right=null;
+  for (let i=0;i<intArr.length-1;i++) {
+    if (intArr[i]<=half && intArr[i+1]>half && left===null) {
+      const t=(half-intArr[i])/(intArr[i+1]-intArr[i]);
+      left=coords[i]+t*(coords[i+1]-coords[i]);
+    }
+  }
+  for (let i=intArr.length-1;i>0;i--) {
+    if (intArr[i]<=half && intArr[i-1]>half && right===null) {
+      const t=(half-intArr[i])/(intArr[i-1]-intArr[i]);
+      right=coords[i]+t*(coords[i-1]-coords[i]);
+    }
+  }
+  return (left!==null&&right!==null)?Math.abs(right-left):null;
+}
+
 function renderMode(idx, data) {
   const mode = allModes[idx];
   document.getElementById('neff').textContent = mode.neff.toFixed(6);
   document.getElementById('modeLabel').textContent = `Mode ${idx+1}`;
-
   const field = mode.field;
   const N = field.length;
   const comp = document.getElementById('comp').value;
+  const xs = mode._x || Array.from({length:N},(_,i)=>i);
+  const ys = mode._y || Array.from({length:N},(_,i)=>i);
+  const xUnit = mode._x ? 'x (μm)' : 'x grid';
+  const yUnit = mode._y ? 'y (μm)' : 'y grid';
 
   let z = field;
-  if (comp === 'Ey') {
-    // Approximate TM: rotate field 90 degrees
-    z = field.map((row,i) => row.map((v,j) => field[j] ? field[j][N-1-i] || 0 : 0));
-  } else if (comp === 'Hz') {
-    z = field.map(row => row.map(v => v * 0.8 + 0.2 * Math.sin(v * Math.PI)));
-  } else if (comp === 'I') {
-    z = field.map(row => row.map(v => v*v));
-  }
+  if (comp==='Ey') z = field.map((row,i)=>row.map((_,j)=>field[j]?field[j][N-1-i]||0:0));
+  else if (comp==='I') z = field.map(row=>row.map(v=>v*v));
 
-  const intensity = field.map(row => row.map(v => v*v));
-  const midRow = Math.floor(N/2);
-  const midCol = Math.floor(N/2);
-  const profile = field[midRow];           // horizontal cross-section (x-axis)
-  const profileY = field.map(r => r[midCol]); // vertical cross-section (y-axis)
-
-  // ── Retrieve real-space x/y axes from last simulation result ──
-  // x/y arrays are stored on allModes[idx] after being set in showResults
-  const xs = allModes[idx]._x || Array.from({length:N}, (_,i) => i);
-  const ys = allModes[idx]._y || Array.from({length:N}, (_,i) => i);
-  const hasPhysical = allModes[idx]._x !== undefined;
-  const xUnit = hasPhysical ? 'x (μm)' : 'x grid index';
-  const yUnit = hasPhysical ? 'y (μm)' : 'y grid index';
-
-  // ── FWHM calculation (on intensity = field²) ──
-  function calcFWHM(arr, coords) {
-    const intArr = arr.map(v => v*v);
-    const peak = Math.max(...intArr);
-    const half = peak / 2;
-    // Find left crossing
-    let left = null, right = null;
-    for (let i = 0; i < intArr.length-1; i++) {
-      if (intArr[i] <= half && intArr[i+1] > half && left === null) {
-        const t = (half - intArr[i]) / (intArr[i+1] - intArr[i]);
-        left = coords[i] + t*(coords[i+1]-coords[i]);
-      }
-    }
-    for (let i = intArr.length-1; i > 0; i--) {
-      if (intArr[i] <= half && intArr[i-1] > half && right === null) {
-        const t = (half - intArr[i]) / (intArr[i-1] - intArr[i]);
-        right = coords[i] + t*(coords[i-1]-coords[i]);
-      }
-    }
-    return (left !== null && right !== null) ? Math.abs(right - left) : null;
-  }
-
+  const intensity = field.map(row=>row.map(v=>v*v));
+  const midRow = Math.floor(N/2), midCol = Math.floor(N/2);
+  const profile = field[midRow];
+  const profileY = field.map(r=>r[midCol]);
   const fwhmX = calcFWHM(profile, xs);
   const fwhmY = calcFWHM(profileY, ys);
-  const fwhmXStr = fwhmX !== null ? fwhmX.toFixed(3) + ' μm' : 'N/A';
-  const fwhmYStr = fwhmY !== null ? fwhmY.toFixed(3) + ' μm' : 'N/A';
+  const fwhmXStr = fwhmX!==null?fwhmX.toFixed(3)+' μm':'N/A';
+  const fwhmYStr = fwhmY!==null?fwhmY.toFixed(3)+' μm':'N/A';
 
-  // Show FWHM in results bar
   let fwhmEl = document.getElementById('fwhmDisplay');
   if (!fwhmEl) {
-    fwhmEl = document.createElement('div');
-    fwhmEl.id = 'fwhmDisplay';
-    fwhmEl.className = 'result-card';
+    fwhmEl=document.createElement('div'); fwhmEl.id='fwhmDisplay'; fwhmEl.className='result-card';
     document.getElementById('resultsBar').appendChild(fwhmEl);
   }
-  fwhmEl.innerHTML = `<div class="result-label">FWHM</div>
-    <div class="result-value" style="font-size:0.9rem">x: ${fwhmXStr}<br>y: ${fwhmYStr}</div>`;
+  fwhmEl.innerHTML=`<div class="rc-label">FWHM</div><div class="rc-val" style="font-size:0.85rem">x: ${fwhmXStr}<br>y: ${fwhmYStr}</div>`;
 
-  const cmap = comp === 'I' ? 'Hot' : 'RdBu';
-  const title = `${comp} — Mode ${idx+1}`;
-  document.getElementById('fieldTitle').textContent = title;
-
-  // ── 2D field heatmap with FWHM cross-hair lines ──
-  const fwhmShapes = [];
-  const fwhmAnnotations = [];
-  if (fwhmX !== null) {
-    const cx = xs[midRow]; // x centre
-    const halfX = fwhmX / 2;
+  const fwhmShapes=[], fwhmAnns=[];
+  if (fwhmX!==null) {
+    const cx=xs[midRow], hx=fwhmX/2;
     fwhmShapes.push(
-      {type:'line', x0:cx-halfX, x1:cx-halfX, y0:ys[0], y1:ys[ys.length-1],
-       line:{color:'#ffeb3b', width:1.5, dash:'dot'}},
-      {type:'line', x0:cx+halfX, x1:cx+halfX, y0:ys[0], y1:ys[ys.length-1],
-       line:{color:'#ffeb3b', width:1.5, dash:'dot'}}
+      {type:'line',x0:cx-hx,x1:cx-hx,y0:ys[0],y1:ys[ys.length-1],line:{color:'#ffeb3b',width:1.5,dash:'dot'}},
+      {type:'line',x0:cx+hx,x1:cx+hx,y0:ys[0],y1:ys[ys.length-1],line:{color:'#ffeb3b',width:1.5,dash:'dot'}}
     );
-    fwhmAnnotations.push({
-      x: cx, y: ys[ys.length-1],
-      text: `FWHMx=${fwhmXStr}`, showarrow:false,
-      font:{color:'#ffeb3b', size:10}, xanchor:'center', yanchor:'bottom'
-    });
+    fwhmAnns.push({x:cx,y:ys[ys.length-1],text:`FWHMx=${fwhmXStr}`,showarrow:false,font:{color:'#ffeb3b',size:9},xanchor:'center',yanchor:'bottom'});
   }
-  if (fwhmY !== null) {
-    const cy = ys[midCol];
-    const halfY = fwhmY / 2;
+  if (fwhmY!==null) {
+    const cy=ys[midCol], hy=fwhmY/2;
     fwhmShapes.push(
-      {type:'line', y0:cy-halfY, y1:cy-halfY, x0:xs[0], x1:xs[xs.length-1],
-       line:{color:'#ff7043', width:1.5, dash:'dot'}},
-      {type:'line', y0:cy+halfY, y1:cy+halfY, x0:xs[0], x1:xs[xs.length-1],
-       line:{color:'#ff7043', width:1.5, dash:'dot'}}
+      {type:'line',y0:cy-hy,y1:cy-hy,x0:xs[0],x1:xs[xs.length-1],line:{color:'#ff7043',width:1.5,dash:'dot'}},
+      {type:'line',y0:cy+hy,y1:cy+hy,x0:xs[0],x1:xs[xs.length-1],line:{color:'#ff7043',width:1.5,dash:'dot'}}
     );
-    fwhmAnnotations.push({
-      x: xs[0], y: cy,
-      text: `FWHMy=${fwhmYStr}`, showarrow:false,
-      font:{color:'#ff7043', size:10}, xanchor:'left', yanchor:'middle'
-    });
+    fwhmAnns.push({x:xs[0],y:cy,text:`FWHMy=${fwhmYStr}`,showarrow:false,font:{color:'#ff7043',size:9},xanchor:'left',yanchor:'middle'});
   }
 
-  const baseLayout = plotLayout(xUnit, yUnit);
-  const heatLayout = {...baseLayout, shapes: fwhmShapes, annotations: fwhmAnnotations};
+  const baseL = plotLayout(xUnit, yUnit);
+  const heatL = {...baseL, shapes:fwhmShapes, annotations:fwhmAnns};
 
-  Plotly.react('fieldPlot', [{
-    x: xs, y: ys, z, type:'heatmap', colorscale: cmap === 'RdBu' ? 'RdBu' : 'Hot',
-    showscale:true, colorbar:{tickfont:{color:'#b0bec5'},len:0.9}
-  }], heatLayout);
+  Plotly.react('fieldPlot',[{x:xs,y:ys,z,type:'heatmap',colorscale:comp==='I'?'Hot':'RdBu',showscale:true,colorbar:{tickfont:{color:'#b0bec5'},len:0.9}}],heatL);
+  Plotly.react('intensPlot',[{x:xs,y:ys,z:intensity,type:'heatmap',colorscale:'Hot',showscale:true,colorbar:{tickfont:{color:'#b0bec5'},len:0.9}}],{...baseL,shapes:fwhmShapes,annotations:fwhmAnns});
 
-  Plotly.react('intensPlot', [{
-    x: xs, y: ys, z: intensity, type:'heatmap', colorscale:'Hot',
-    showscale:true, colorbar:{tickfont:{color:'#b0bec5'},len:0.9}
-  }], {...baseLayout, shapes: fwhmShapes, annotations: fwhmAnnotations});
-
-  // ── Profile plot with FWHM markers ──
-  const profileTraces = [
-    { x: xs, y: profile, type:'scatter', mode:'lines', name:'Ex (horizontal)',
-      line:{color:'#80cbc4', width:2}, fill:'tozeroy', fillcolor:'rgba(92,107,192,0.2)' }
-  ];
-  const profileLayout = {...plotLayout(xUnit, 'Field amplitude'), shapes:[], annotations:[]};
-  if (fwhmX !== null) {
-    const cx = xs[midRow];
-    const halfX = fwhmX / 2;
-    const peakVal = Math.max(...profile.map(v=>v*v));
-    const halfVal = Math.sqrt(peakVal / 2); // half-max of field amplitude
-    profileLayout.shapes.push(
-      {type:'line', x0:cx-halfX, x1:cx+halfX, y0:halfVal, y1:halfVal,
-       line:{color:'#ffeb3b', width:2, dash:'solid'}},
-      {type:'line', x0:cx-halfX, x1:cx-halfX, y0:0, y1:halfVal,
-       line:{color:'#ffeb3b', width:1, dash:'dot'}},
-      {type:'line', x0:cx+halfX, x1:cx+halfX, y0:0, y1:halfVal,
-       line:{color:'#ffeb3b', width:1, dash:'dot'}}
+  const profLayout={...plotLayout(xUnit,'Field amplitude'),shapes:[],annotations:[]};
+  if (fwhmX!==null) {
+    const cx=xs[midRow],hx=fwhmX/2,peak=Math.max(...profile.map(v=>v*v)),hv=Math.sqrt(peak/2);
+    profLayout.shapes.push(
+      {type:'line',x0:cx-hx,x1:cx+hx,y0:hv,y1:hv,line:{color:'#ffeb3b',width:2}},
+      {type:'line',x0:cx-hx,x1:cx-hx,y0:0,y1:hv,line:{color:'#ffeb3b',width:1,dash:'dot'}},
+      {type:'line',x0:cx+hx,x1:cx+hx,y0:0,y1:hv,line:{color:'#ffeb3b',width:1,dash:'dot'}}
     );
-    profileLayout.annotations.push({
-      x: cx, y: halfVal,
-      text: `FWHM = ${fwhmXStr}`, showarrow:true, arrowcolor:'#ffeb3b',
-      arrowhead:2, ax:0, ay:-30,
-      font:{color:'#ffeb3b', size:11}, bgcolor:'rgba(0,0,0,0.5)'
-    });
+    profLayout.annotations.push({x:cx,y:hv,text:`FWHM=${fwhmXStr}`,showarrow:true,arrowcolor:'#ffeb3b',arrowhead:2,ax:0,ay:-30,font:{color:'#ffeb3b',size:10},bgcolor:'rgba(0,0,0,0.5)'});
   }
+  Plotly.react('profilePlot',[{x:xs,y:profile,type:'scatter',mode:'lines',line:{color:'#80cbc4',width:2},fill:'tozeroy',fillcolor:'rgba(92,107,192,0.2)'}],profLayout);
 
-  Plotly.react('profilePlot', profileTraces, profileLayout);
+  document.getElementById('fieldTitle').textContent = `${comp} — Mode ${idx+1}`;
 }
 
 function plotLayout(xtitle, ytitle) {
@@ -581,17 +811,15 @@ function plotLayout(xtitle, ytitle) {
   };
 }
 
-// ── Init ───────────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────
 document.getElementById('comp').addEventListener('change', () => {
   if (allModes.length > 0) renderMode(currentMode, null);
 });
-
-// Format all number inputs to their correct decimal precision on load
 [['ncoreNum',3],['ncladNum',3]].forEach(([id,dec]) => {
   const el = document.getElementById(id);
   if (el) el.value = parseFloat(el.value).toFixed(dec);
 });
-
+onTypeChange();
 drawSchematic();
 initPyodide();
 </script>
