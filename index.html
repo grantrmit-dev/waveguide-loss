@@ -82,6 +82,19 @@
       </div>
     </div>
 
+    <!-- Core Shape -->
+    <div>
+      <div class="panel-title">Core Shape</div>
+      <div class="param-group">
+        <label><span>Shape</span>
+          <select id="coreShape" onchange="onTypeChange()">
+            <option value="rect" selected>Rectangular (a × b)</option>
+            <option value="ellipse">Elliptical (semi-axes a/2, b/2) — circle when a = b</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
     <!-- Geometry -->
     <div>
       <div class="panel-title">Waveguide Geometry</div>
@@ -275,9 +288,17 @@ const typeDescs = {
 
 function onTypeChange() {
   const t = document.getElementById('wgType').value;
+  const s = document.getElementById('coreShape').value;
   document.getElementById('typeDesc').textContent = typeDescs[t];
+  // Slot waveguide always rectangular (can't have elliptical slot rails sensibly)
+  const shapeEl = document.getElementById('coreShape');
+  if (t === 'slot' || t === 'ridge') {
+    shapeEl.value = 'rect';
+    shapeEl.disabled = true;
+  } else {
+    shapeEl.disabled = false;
+  }
   document.getElementById('slotRow').style.display = t === 'slot' ? '' : 'none';
-  // Adjust roughness visibility
   const hasRoughness = ['ridge','slot','wire'].includes(t);
   document.getElementById('roughRow').style.opacity = hasRoughness ? '1' : '0.4';
   document.getElementById('corrRow').style.opacity = hasRoughness ? '1' : '0.4';
@@ -324,10 +345,19 @@ function syncFromNumber(sliderId, numId, valId, dec, minVal, maxVal) {
 }
 
 // ── Schematic ─────────────────────────────────────────────────────────────
+function ellipsePoints(cx, cy, rx, ry, n=80) {
+  const pts = Array.from({length:n+1}, (_,i) => {
+    const angle = 2*Math.PI*i/n;
+    return [cx + rx*Math.cos(angle), cy + ry*Math.sin(angle)];
+  });
+  return {x: pts.map(p=>p[0]), y: pts.map(p=>p[1])};
+}
+
 function drawSchematic() {
   const a = parseFloat(document.getElementById('a').value);
   const b = parseFloat(document.getElementById('b').value);
   const t = document.getElementById('wgType').value;
+  const s = document.getElementById('coreShape').value;
   const slot = parseFloat(document.getElementById('slot').value);
   const pad = 2.0;
   const W = a + 2*pad, H = b + 2*pad;
@@ -357,6 +387,13 @@ function drawSchematic() {
       {x:[pad, pad+a, pad+a, pad, pad], y:[pad+slabH, pad+slabH, pad+slabH+ridgeH, pad+slabH+ridgeH, pad+slabH],
        fill:'toself', fillcolor:'#5c6bc0', line:{color:'#80cbc4',width:2}, name:'Ridge', mode:'lines'}
     );
+  } else if (s === 'ellipse') {
+    const ep = ellipsePoints(pad + a/2, pad + b/2, a/2, b/2);
+    const shapeLabel = Math.abs(a-b) < 0.01 ? `Circle (r=${(a/2).toFixed(2)} μm)` : `Ellipse (${a}×${b} μm)`;
+    traces.push({
+      x: ep.x, y: ep.y, fill:'toself', fillcolor:'#5c6bc0',
+      line:{color:'#80cbc4',width:2}, name: shapeLabel, mode:'lines'
+    });
   } else {
     traces.push(
       {x:[pad, pad+a, pad+a, pad, pad], y:[pad, pad, pad+b, pad+b, pad],
@@ -380,7 +417,7 @@ import numpy as np
 from scipy.sparse import diags
 from scipy.sparse.linalg import eigsh
 
-def solve_modes(a_um, b_um, n_core, n_clad, lam_um, N, n_modes=6, wg_type='rect', slot_um=0.2):
+def solve_modes(a_um, b_um, n_core, n_clad, lam_um, N, n_modes=6, wg_type='rect', slot_um=0.2, core_shape='rect'):
     k0 = 2 * np.pi / lam_um
     a_um = max(a_um, 0.05)
     b_um = max(b_um, 0.05)
@@ -407,6 +444,10 @@ def solve_modes(a_um, b_um, n_core, n_clad, lam_um, N, n_modes=6, wg_type='rect'
         slab_mask = (np.abs(Y - (cy - ridge_h/2)) <= slab_h/2 + 1e-9)
         ridge_mask = (np.abs(X - cx) <= a_um/2) & (np.abs(Y - (cy + slab_h/2)) <= ridge_h/2 + 1e-9)
         mask = slab_mask | ridge_mask
+    elif core_shape == 'ellipse':
+        # Elliptical core: semi-axes a_um/2 (x) and b_um/2 (y)
+        rx, ry = a_um / 2, b_um / 2
+        mask = ((X - cx)**2 / rx**2 + (Y - cy)**2 / ry**2) <= 1.0
     else:
         mask = (np.abs(X - cx) <= a_um/2) & (np.abs(Y - cy) <= b_um/2)
 
@@ -521,12 +562,12 @@ def calc_loss(mode_field, x, y, dx, dy, n_map, mask_arr, lam_um, neff,
 
 def sweep_loss_vs_wavelength(a_um, b_um, n_core, n_clad, lam_list,
                               nim_core, nim_clad, sigma_nm, Lc_nm, R_bend_um,
-                              wg_type, N=60):
+                              wg_type, N=60, core_shape='rect'):
     import json
     results = []
     for lam in lam_list:
         try:
-            r = solve_modes(a_um, b_um, n_core, n_clad, lam, N, n_modes=4, wg_type=wg_type)
+            r = solve_modes(a_um, b_um, n_core, n_clad, lam, N, n_modes=4, wg_type=wg_type, core_shape=core_shape)
             if r['modes']:
                 m = r['modes'][0]
                 loss = calc_loss(m['field'], r['x'], r['y'], r['dx'], r['dy'],
@@ -553,8 +594,9 @@ async function runSim() {
   const ncl = parseFloat(document.getElementById('nclad').value);
   const lam = parseFloat(document.getElementById('lam').value);
   const N   = parseInt(document.getElementById('res').value);
-  const wgt = document.getElementById('wgType').value;
-  const slot= parseFloat(document.getElementById('slot').value);
+  const wgt  = document.getElementById('wgType').value;
+  const wgsh = document.getElementById('coreShape').value;
+  const slot = parseFloat(document.getElementById('slot').value);
   const nimC= parseFloat(document.getElementById('nimCore').value);
   const nimL= parseFloat(document.getElementById('nimClad').value);
   const sig = parseFloat(document.getElementById('sigma').value);
@@ -572,14 +614,14 @@ async function runSim() {
     // Run mode solver
     const result = await pyodide.runPythonAsync(`
 import json
-r = solve_modes(${a}, ${b}, ${nc}, ${ncl}, ${lam}, ${N}, n_modes=8, wg_type='${wgt}', slot_um=${slot})
+r = solve_modes(${a}, ${b}, ${nc}, ${ncl}, ${lam}, ${N}, n_modes=8, wg_type='${wgt}', slot_um=${slot}, core_shape='${wgsh}')
 json.dumps(r)
 `);
     const data = JSON.parse(result);
     allModes = data.modes;
     allModes.forEach(m => { m._x = data.x; m._y = data.y; });
     currentMode = 0;
-    lastSimData = {data, a, b, nc, ncl, lam, wgt, slot, nimC, nimL, sig, Lc, Rb};
+    lastSimData = {data, a, b, nc, ncl, lam, wgt, wgsh, slot, nimC, nimL, sig, Lc, Rb};
 
     if (allModes.length === 0) {
       setStatus('No guided modes found.', 'error');
@@ -615,7 +657,7 @@ json.dumps(loss)
 import json
 sw = sweep_loss_vs_wavelength(${a},${b},${nc},${ncl},
     list(_lamList),
-    ${nimC},${nimL},${sig},${Lc},${Rb},'${wgt}',N=60)
+    ${nimC},${nimL},${sig},${Lc},${Rb},'${wgt}',N=60,core_shape='${wgsh}')
 json.dumps(sw)
 `);
     const sweep = JSON.parse(sweepResult);
