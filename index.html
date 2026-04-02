@@ -587,13 +587,19 @@ json.dumps(r)
     }
 
     // Calculate loss for first mode
+    // Store arrays in Pyodide directly to avoid JS true/false → Python name error
+    pyodide.globals.set('_field0', pyodide.toPy(allModes[0].field));
+    pyodide.globals.set('_x', pyodide.toPy(data.x));
+    pyodide.globals.set('_y', pyodide.toPy(data.y));
+    pyodide.globals.set('_nmap', pyodide.toPy(data.n_map));
+    pyodide.globals.set('_mask', pyodide.toPy(data.mask));
+
     const lossResult = await pyodide.runPythonAsync(`
 import json
 loss = calc_loss(
-    ${JSON.stringify(allModes[0].field)},
-    ${JSON.stringify(data.x)}, ${JSON.stringify(data.y)},
+    _field0, _x, _y,
     ${data.dx}, ${data.dy},
-    ${JSON.stringify(data.n_map)}, ${JSON.stringify(data.mask)},
+    _nmap, _mask,
     ${lam}, ${allModes[0].neff},
     ${nimC}, ${nimL}, ${sig}, ${Lc}, ${Rb}, '${wgt}'
 )
@@ -604,10 +610,11 @@ json.dumps(loss)
     // Wavelength sweep
     setStatus('Running wavelength sweep...', '');
     const lamList = Array.from({length:17}, (_,i) => +(0.4 + i*0.1).toFixed(2));
+    pyodide.globals.set('_lamList', pyodide.toPy(lamList));
     const sweepResult = await pyodide.runPythonAsync(`
 import json
 sw = sweep_loss_vs_wavelength(${a},${b},${nc},${ncl},
-    ${JSON.stringify(lamList)},
+    list(_lamList),
     ${nimC},${nimL},${sig},${Lc},${Rb},'${wgt}',N=60)
 json.dumps(sw)
 `);
